@@ -6,20 +6,9 @@ import { Wine, Box, Plus, Camera, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as tmImage from "@teachablemachine/image";
 
-// === AI Model Config ===
 const modelURL = "/model/model.json";
 const metadataURL = "/model/metadata.json";
 let model: tmImage.CustomMobileNet | null = null;
-
-// === Load the model once ===
-const loadModel = async () => {
-  try {
-    model = await tmImage.load(modelURL, metadataURL);
-    console.log("✅ AI model loaded successfully");
-  } catch (error) {
-    console.error("❌ Failed to load model:", error);
-  }
-};
 
 interface ScannerProps {
   onPointsEarned: (points: number) => void;
@@ -34,77 +23,78 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+    const loadModel = async () => {
+      try {
+        const loaded = await tmImage.load(modelURL, metadataURL);
+        if (mounted) model = loaded;
+        console.log("✅ Model loaded");
+      } catch (e) {
+        console.error("❌ Model load error:", e);
+      }
+    };
     loadModel();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const items = [
-    { id: "plastic", name: "Plastic Bottle", points: 20, icon: Wine, color: "from-blue-500 to-cyan-500" },
-    { id: "tin", name: "Tin Can", points: 40, icon: Box, color: "from-gray-500 to-slate-500" },
-  ];
-
-  // === Fix for black screen / camera not showing ===
+  // ✅ Open Camera
   const openCamera = async () => {
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast({
-          title: "Camera not supported",
-          description: "Your browser does not support camera access.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const backCamera = devices.find(
-        (device) =>
-          device.kind === "videoinput" && device.label.toLowerCase().includes("back")
-      );
-
-      const constraints = {
-        video: backCamera
-          ? { deviceId: { exact: backCamera.deviceId } }
-          : { facingMode: { ideal: "environment" } },
+      console.log("🎥 Requesting camera access...");
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
-      };
+      });
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log("✅ Camera opened successfully");
       setStream(mediaStream);
       setCameraOpen(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.muted = true;
-
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => console.log("📷 Camera stream started"))
-            .catch((err) => console.error("Camera play error:", err));
-        }
-      }
     } catch (error) {
-      console.error("Camera Error:", error);
+      console.error("❌ Camera Error:", error);
       toast({
         title: "Camera access denied",
-        description: "Please allow camera access in browser settings.",
+        description: "Please allow camera access in your browser settings.",
         variant: "destructive",
       });
     }
   };
 
+  // ✅ When stream updates, attach to video
+  useEffect(() => {
+    if (cameraOpen && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current
+        .play()
+        .then(() => console.log("🎬 Video playing"))
+        .catch((err) => console.error("Playback error:", err));
+    }
+  }, [cameraOpen, stream]);
+
+  // ✅ Close Camera
   const closeCamera = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
     }
+    setStream(null);
     setCameraOpen(false);
   };
 
+  // ✅ Detect Function
   const captureAndDetect = async () => {
     if (!videoRef.current || !canvasRef.current || !model) {
       toast({
         title: "Model not ready",
-        description: "Please wait a few seconds and try again",
+        description: "Please wait a few seconds and try again.",
         variant: "destructive",
       });
       return;
@@ -112,23 +102,19 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-
-    if (!context) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0);
 
     setScanning(true);
-
     try {
       const prediction = await model.predict(canvas);
-      const best = prediction.reduce((prev, curr) =>
-        curr.probability > prev.probability ? curr : prev
-      );
+      const best = prediction.reduce((a, b) => (a.probability > b.probability ? a : b));
 
-      console.log("Prediction:", best);
+      console.log("🧠 Prediction:", best);
 
       if (best.probability > 0.8) {
         const points = best.className.includes("Bottle") ? 20 : 40;
@@ -140,22 +126,28 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
       } else {
         toast({
           title: "No recognizable item found",
-          description: "Try scanning again under good lighting",
+          description: "Try again with better lighting.",
           variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error("Detection error:", error);
-      toast({
-        title: "Detection failed",
-        description: "Error analyzing the image",
-        variant: "destructive",
-      });
+    } catch (e) {
+      console.error("Detection error:", e);
     }
-
     setScanning(false);
     closeCamera();
   };
+
+  const handleManualScan = (item: { points: number; name: string }) => {
+    toast({
+      title: `+${item.points} Eco Points!`,
+      description: `${item.name} added manually.`,
+    });
+  };
+
+  const items = [
+    { id: "plastic", name: "Plastic Bottle", points: 20, icon: Wine, color: "from-blue-500 to-cyan-500" },
+    { id: "tin", name: "Tin Can", points: 40, icon: Box, color: "from-gray-500 to-slate-500" },
+  ];
 
   return (
     <div className="py-16 px-4">
@@ -170,6 +162,12 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
             <Camera className="w-5 h-5 mr-2" />
             Scan Items with Camera
           </Button>
+
+          {stream && (
+            <p className="text-green-500 text-center text-sm mt-2">
+              ✅ Camera stream active
+            </p>
+          )}
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -211,7 +209,7 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
         </div>
       </div>
 
-      <Dialog open={cameraOpen} onOpenChange={closeCamera}>
+      <Dialog open={cameraOpen} onOpenChange={(open) => !open && closeCamera()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Scan Recyclable Item</DialogTitle>
@@ -248,15 +246,6 @@ const Scanner = ({ onPointsEarned }: ScannerProps) => {
       </Dialog>
     </div>
   );
-};
-
-// Manual scan for static buttons
-const handleManualScan = (item: { points: number; name: string }) => {
-  const { toast } = useToast();
-  toast({
-    title: `+${item.points} Eco Points!`,
-    description: `${item.name} added manually.`,
-  });
 };
 
 export default Scanner;
