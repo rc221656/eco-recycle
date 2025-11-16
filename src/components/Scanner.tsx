@@ -1,13 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Wine, Box, Plus, Camera, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Camera, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as tmImage from "@teachablemachine/image";
 
@@ -20,224 +14,214 @@ interface ScannerProps {
   onPointsEarned: (points: number) => void;
 }
 
-const Scanner = ({ onPointsEarned }: ScannerProps) => {
-  const [scanning, setScanning] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-
+export default function Scanner({ onPointsEarned }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
   const { toast } = useToast();
 
-  // Load Model Once
+  // -------------------------------
+  // LOAD MODEL
+  // -------------------------------
   useEffect(() => {
-    let mounted = true;
-
-    const loadModel = async () => {
+    const load = async () => {
       try {
-        const loaded = await tmImage.load(modelURL, metadataURL);
-        if (mounted) model = loaded;
-        console.log("✅ Model loaded successfully");
-      } catch (e) {
-        console.error("❌ Model load error:", e);
+        model = await tmImage.load(modelURL, metadataURL);
+        console.log("✅ AI Model Loaded");
+      } catch (err) {
+        console.error("❌ Model Load Error:", err);
       }
     };
-
-    loadModel();
-    return () => {
-      mounted = false;
-    };
+    load();
   }, []);
 
-  // Open Camera
+  // -------------------------------
+  // OPEN CAMERA
+  // -------------------------------
   const openCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: "environment" },
+        audio: false,
       });
 
       setStream(mediaStream);
-      setCameraOpen(true);
-    } catch (error) {
+      setCameraEnabled(true);
+
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current
+            .play()
+            .then(() => console.log("🎥 Camera Started"))
+            .catch(() => {});
+        }
+      }, 200);
+    } catch (err) {
+      console.error("Camera error:", err);
       toast({
-        title: "Camera access blocked",
+        title: "Camera blocked",
         description: "Please allow camera access in browser settings.",
         variant: "destructive",
       });
     }
   };
 
-  // Attach stream to video
-  useEffect(() => {
-    if (cameraOpen && stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
-
-      videoRef.current
-        .play()
-        .then(() => console.log("🎬 Video is playing"))
-        .catch((err) => console.error("Playback error:", err));
-    }
-  }, [cameraOpen, stream]);
-
-  // Close Camera
+  // -------------------------------
+  // CLOSE CAMERA
+  // -------------------------------
   const closeCamera = () => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.srcObject = null;
     }
-
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-
+    if (stream) stream.getTracks().forEach((t) => t.stop());
     setStream(null);
-    setCameraOpen(false);
+    setCameraEnabled(false);
   };
 
-  // Capture + Predict
+  // -------------------------------
+  // DETECTION LOGIC (AUTO CLASS FIX)
+  // -------------------------------
   const captureAndDetect = async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (!video || !canvas || !model) {
+    if (!videoRef.current || !canvasRef.current || !model) {
       toast({
         title: "Model not ready",
-        description: "Please wait and try again.",
+        description: "Wait a moment and try again.",
         variant: "destructive",
       });
       return;
     }
 
-    // Fix: Ensure camera is ready
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      toast({
-        title: "Camera not ready",
-        description: "Please wait 1 second and retry.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Draw video frame onto canvas
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-
     ctx.drawImage(video, 0, 0);
 
     setScanning(true);
 
     try {
-      const prediction = await model.predict(canvas);
-
-      const best = prediction.reduce((a, b) =>
+      const predictions = await model.predict(canvas);
+      const best = predictions.reduce((a, b) =>
         a.probability > b.probability ? a : b
       );
 
-      console.log("Prediction:", best);
+      console.log("🧠 Prediction:", best);
 
-      if (best.probability > 0.8) {
-        const points = best.className.includes("Bottle") ? 20 : 40;
+      // Normalize class name (makes ANY model name work)
+      const className = best.className.toLowerCase().replace(/\s/g, "");
 
+      let points = 0;
+
+      if (className.includes("bottle") || className.includes("plastic")) {
+        points = 20;
+      } else if (className.includes("can") || className.includes("tin")) {
+        points = 40;
+      } else {
+        points = 0;
+      }
+
+      if (best.probability > 0.70 && points > 0) {
         onPointsEarned(points);
-
         toast({
           title: `+${points} Eco Points!`,
-          description: `${best.className} detected`,
+          description: `${best.className} detected.`,
         });
       } else {
         toast({
-          title: "Item not detected",
-          description: "Please try again with better lighting.",
+          title: "Invalid Item",
+          description: "This item is not recognized.",
           variant: "destructive",
         });
       }
-    } catch (e) {
-      console.error("Detection error:", e);
+    } catch (err) {
+      console.error("Detection error:", err);
     }
 
     setScanning(false);
-    closeCamera();
   };
 
   const items = [
-    { id: "plastic", name: "Plastic Bottle", points: 20, icon: Wine },
-    { id: "tin", name: "Tin Can", points: 40, icon: Box },
+    { name: "Plastic Bottle", points: 20 },
+    { name: "Tin Can", points: 40 },
   ];
 
+  // -------------------------------
+  // UI
+  // -------------------------------
   return (
-    <div className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Scan Your Items</h2>
-          <p className="text-muted-foreground text-lg">
-            Use your camera to scan recyclable items
-          </p>
+    <div className="px-4 py-10 max-w-4xl mx-auto text-center">
 
-          <Button size="lg" className="mt-6" onClick={openCamera}>
-            <Camera className="w-5 h-5 mr-2" />
-            Scan Items with Camera
+      <h2 className="text-3xl font-bold mb-3">Scan Your Items</h2>
+      <p className="text-muted-foreground mb-6">Detect recyclables using AI</p>
+
+      <Button size="lg" className="mb-6" onClick={openCamera}>
+        <Camera className="w-5 h-5 mr-2" />
+        Open Camera
+      </Button>
+
+      {cameraEnabled && (
+        <div className="border rounded-lg p-3 bg-black max-w-xl mx-auto mb-6">
+          <video
+            ref={videoRef}
+            muted
+            autoPlay
+            playsInline
+            className="w-full h-auto rounded-lg"
+          />
+
+          <canvas ref={canvasRef} className="hidden" />
+
+          <Button
+            size="lg"
+            className="w-full mt-4"
+            onClick={captureAndDetect}
+            disabled={scanning}
+          >
+            {scanning ? "Detecting..." : "Capture & Detect"}
+          </Button>
+
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full mt-2"
+            onClick={closeCamera}
+          >
+            Close Camera
           </Button>
         </div>
+      )}
 
-        <Dialog open={cameraOpen} onOpenChange={(open) => !open && closeCamera()}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Scan Recyclable Item</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* FIXED VIDEO + CANVAS */}
-              <div className="relative bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{
-                    width: "100%",
-                    height: "350px",
-                    objectFit: "cover",
-                    background: "black",
-                  }}
-                />
-
-                <canvas
-                  ref={canvasRef}
-                  width={640}
-                  height={480}
-                  style={{ display: "none" }}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <Button
-                  size="lg"
-                  className="flex-1"
-                  onClick={captureAndDetect}
-                  disabled={scanning}
-                >
-                  <Camera className="w-5 h-5 mr-2" />
-                  {scanning ? "Detecting..." : "Capture & Detect"}
-                </Button>
-
-                <Button size="lg" variant="outline" onClick={closeCamera}>
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="grid md:grid-cols-2 gap-6 mt-10">
+        {items.map((item) => (
+          <Card key={item.name} className="p-6">
+            <h3 className="text-xl font-bold">{item.name}</h3>
+            <p className="text-muted-foreground mb-3">
+              +{item.points} points
+            </p>
+            <Button
+              onClick={() => {
+                toast({
+                  title: `+${item.points} Eco Points!`,
+                  description: `${item.name} added manually.`,
+                });
+                onPointsEarned(item.points);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Manually
+            </Button>
+          </Card>
+        ))}
       </div>
+
     </div>
   );
-};
-
-export default Scanner;
+}
