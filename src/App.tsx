@@ -2,7 +2,7 @@ import "./App.css";
 import Router from "./router";
 import { BrowserRouter } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Sun, Moon, Recycle, Gift, Users, Star } from "lucide-react";
+import { Sun, Moon, Gift, Users, Star } from "lucide-react"; // 👈 Recycle hata diya
 import { Toaster } from "./components/ui/toaster";
 import { motion } from "framer-motion";
 
@@ -22,16 +22,29 @@ export default function App() {
         {/* Sticky Navbar */}
         <header className="fixed top-0 w-full z-50 backdrop-blur-md bg-white/70 dark:bg-[hsl(var(--background))/0.7] border-b border-[hsl(var(--border))]">
           <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+            {/* 👇 Yaha naya logo + text */}
             <h1 className="text-2xl font-extrabold text-[hsl(var(--primary))] flex items-center gap-3">
-              <Recycle className="w-6 h-6 text-[hsl(var(--secondary))]" />
-              Eco Recycle
+              <img
+                src="/logo.png"
+                alt="Eco Recycle Reward logo"
+                className="w-20 h-20 object-contain"
+              />
+              <span>Eco Recycle</span>
             </h1>
 
             <nav className="hidden md:flex gap-8 text-[hsl(var(--muted-foreground))] font-medium">
-              <a href="#features" className="hover:text-[hsl(var(--primary))] transition">Features</a>
-              <a href="#how" className="hover:text-[hsl(var(--primary))] transition">How it Works</a>
-              <a href="#stats" className="hover:text-[hsl(var(--primary))] transition">Stats</a>
-              <a href="#impact" className="hover:text-[hsl(var(--primary))] transition">Impact</a>
+              <a href="#features" className="hover:text-[hsl(var(--primary))] transition">
+                Features
+              </a>
+              <a href="#how" className="hover:text-[hsl(var(--primary))] transition">
+                How it Works
+              </a>
+              <a href="#stats" className="hover:text-[hsl(var(--primary))] transition">
+                Stats
+              </a>
+              <a href="#impact" className="hover:text-[hsl(var(--primary))] transition">
+                Impact
+              </a>
             </nav>
 
             <div className="flex items-center gap-3">
@@ -69,10 +82,16 @@ export default function App() {
             transition={{ delay: 0.15, duration: 0.7 }}
             className="text-lg md:text-xl max-w-2xl mx-auto text-[hsl(var(--muted-foreground))] mb-8"
           >
-            Earn points for everyday eco actions and redeem them for discounts, coupons, or donate to green causes.
+            Earn points for everyday eco actions and redeem them for discounts, coupons, or
+            donate to green causes.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }} className="flex justify-center gap-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center gap-4"
+          >
             <button className="btn-primary">Get Started</button>
             <button className="btn-outline">Learn More</button>
           </motion.div>
@@ -87,7 +106,10 @@ export default function App() {
         </section>
 
         {/* How it works */}
-        <section id="how" className="section bg-[var(--gradient-section)] border-y border-[hsl(var(--border))]">
+        <section
+          id="how"
+          className="section bg-[var(--gradient-section)] border-y border-[hsl(var(--border))]"
+        >
           <h2 className="text-4xl font-bold text-center mb-10">How it Works</h2>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -96,8 +118,17 @@ export default function App() {
               { step: "2", title: "Earn Points", desc: "Every correct action earns points instantly." },
               { step: "3", title: "Redeem", desc: "Use points for coupons, discounts or donate." },
             ].map((s) => (
-              <motion.div key={s.step} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="card text-center">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-bold flex items-center justify-center text-lg">{s.step}</div>
+              <motion.div
+                key={s.step}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+                className="card text-center"
+              >
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] font-bold flex items-center justify-center text-lg">
+                  {s.step}
+                </div>
                 <h3 className="text-xl font-semibold mb-2">{s.title}</h3>
                 <p className="text-[hsl(var(--muted-foreground))]">{s.desc}</p>
               </motion.div>
@@ -106,13 +137,35 @@ export default function App() {
         </section>
 
         {/* Features */}
-        <section id="features" className="section grid md:grid-cols-3 gap-8 border-y border-[hsl(var(--border))]">
+        <section
+          id="features"
+          className="section grid md:grid-cols-3 gap-8 border-y border-[hsl(var(--border))]"
+        >
           {[
-            { icon: <Recycle className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />, title: "AI Recognition", text: "Identify materials quickly and accurately." },
-            { icon: <Gift className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />, title: "Instant Rewards", text: "Points credited immediately for verified actions." },
-            { icon: <Users className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />, title: "Community", text: "Join challenges, share progress and compete on leaderboards." },
+            {
+              icon: <Gift className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />,
+              title: "AI Recognition",
+              text: "Identify materials quickly and accurately.",
+            },
+            {
+              icon: <Users className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />,
+              title: "Instant Rewards",
+              text: "Points credited immediately for verified actions.",
+            },
+            {
+              icon: <Star className="w-8 h-8 mx-auto text-[hsl(var(--primary))]" />,
+              title: "Community",
+              text: "Join challenges, share progress and compete on leaderboards.",
+            },
           ].map((f, i) => (
-            <motion.div key={f.title} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.15 }} viewport={{ once: true }} className="card text-center">
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.15 }}
+              viewport={{ once: true }}
+              className="card text-center"
+            >
               {f.icon}
               <h3 className="text-2xl mt-3 mb-2">{f.title}</h3>
               <p className="text-[hsl(var(--muted-foreground))]">{f.text}</p>
@@ -121,7 +174,10 @@ export default function App() {
         </section>
 
         {/* Stats */}
-        <section id="stats" className="section text-center bg-[hsl(var(--accent))]/10 border-y border-[hsl(var(--border))]">
+        <section
+          id="stats"
+          className="section text-center bg-[hsl(var(--accent))]/10 border-y border-[hsl(var(--border))]"
+        >
           <h2 className="text-4xl font-bold mb-10">By The Numbers</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -129,8 +185,17 @@ export default function App() {
               { value: "2,000+", label: "Points Earned" },
               { value: "500+", label: "Active Users" },
             ].map((s, i) => (
-              <motion.div key={s.label} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.12 }} viewport={{ once: true }} className="p-6 rounded-2xl border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50 backdrop-blur-md">
-                <h3 className="text-4xl md:text-5xl font-extrabold text-[hsl(var(--primary))] mb-2">{s.value}</h3>
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.12 }}
+                viewport={{ once: true }}
+                className="p-6 rounded-2xl border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50 backdrop-blur-md"
+              >
+                <h3 className="text-4xl md:text-5xl font-extrabold text-[hsl(var(--primary))] mb-2">
+                  {s.value}
+                </h3>
                 <p className="text-[hsl(var(--muted-foreground))] font-medium">{s.label}</p>
               </motion.div>
             ))}
@@ -141,21 +206,45 @@ export default function App() {
         <section className="section">
           <h3 className="text-2xl font-semibold text-center mb-6">Trusted by</h3>
           <div className="flex items-center justify-center gap-10 flex-wrap">
-            {/* Replace with real logos if available */}
-            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">Amazon</div>
-            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">Flipkart</div>
-            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">Zomato</div>
-            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">Local Shop</div>
+            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">
+              Amazon
+            </div>
+            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">
+              Flipkart
+            </div>
+            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">
+              Zomato
+            </div>
+            <div className="px-6 py-3 rounded-lg border border-[hsl(var(--border))] bg-white/60 dark:bg-[hsl(var(--background))]/50">
+              Local Shop
+            </div>
           </div>
         </section>
 
         {/* Impact */}
-        <section id="impact" className="section text-center bg-[hsl(var(--muted))] border border-[hsl(var(--border))]/50 shadow-inner rounded-3xl mt-8 mx-4">
-          <motion.h2 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.6 }} className="text-4xl font-bold mb-4">Our Impact</motion.h2>
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.15 }} className="text-[hsl(var(--muted-foreground))] mb-6">
+        <section
+          id="impact"
+          className="section text-center bg-[hsl(var(--muted))] border border-[hsl(var(--border))]/50 shadow-inner rounded-3xl mt-8 mx-4"
+        >
+          <motion.h2
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="text-4xl font-bold mb-4"
+          >
+            Our Impact
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="text-[hsl(var(--muted-foreground))] mb-6"
+          >
             We help users turn small everyday actions into measurable environmental impact.
           </motion.p>
-          <motion.button whileHover={{ scale: 1.04 }} className="btn-primary">Join the Movement</motion.button>
+          <motion.button whileHover={{ scale: 1.04 }} className="btn-primary">
+            Join the Movement
+          </motion.button>
         </section>
 
         {/* Testimonials */}
@@ -167,9 +256,17 @@ export default function App() {
               { quote: "I earn points for small actions—love it.", name: "Riya" },
               { quote: "Perfect for college and home use.", name: "Kunal" },
             ].map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.12 }} className="p-6 rounded-2xl bg-card border border-[hsl(var(--border))] shadow-[var(--shadow-card)]">
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.12 }}
+                className="p-6 rounded-2xl bg-card border border-[hsl(var(--border))] shadow-[var(--shadow-card)]"
+              >
                 <Star className="w-6 h-6 mx-auto text-[hsl(var(--secondary))]" />
-                <p className="italic mt-4 mb-3 text-[hsl(var(--muted-foreground))]">“{t.quote}”</p>
+                <p className="italic mt-4 mb-3 text-[hsl(var(--muted-foreground))]">
+                  “{t.quote}”
+                </p>
                 <h4 className="font-semibold text-[hsl(var(--primary))]">{t.name}</h4>
               </motion.div>
             ))}
@@ -181,7 +278,9 @@ export default function App() {
           <div className="max-w-7xl mx-auto rounded-2xl p-8 bg-gradient-to-r from-[hsl(var(--primary))]/8 to-[hsl(var(--secondary))]/8 border border-[hsl(var(--border))] flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-bold mb-1">Ready to make a difference?</h3>
-              <p className="text-[hsl(var(--muted-foreground))]">Start recycling and earn rewards today — small steps, big impact.</p>
+              <p className="text-[hsl(var(--muted-foreground))]">
+                Start recycling and earn rewards today — small steps, big impact.
+              </p>
             </div>
             <div className="flex gap-3">
               <button className="btn-primary">Get Started</button>
@@ -192,7 +291,9 @@ export default function App() {
 
         {/* Footer */}
         <footer className="relative text-center py-10 mt-12 border-t border-transparent before:absolute before:top-0 before:left-0 before:w-full before:h-[2px] before:bg-gradient-to-r before:from-[hsl(var(--primary))] before:to-[hsl(var(--secondary))]">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">© 2025 Eco Recycle Reward · Recycle. Earn. Repeat.</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            © 2025 Eco Recycle Reward · Recycle. Earn. Repeat.
+          </p>
         </footer>
 
         {/* Router pages & toaster */}
